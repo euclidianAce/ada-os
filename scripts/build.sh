@@ -40,5 +40,5 @@ grub-mkrescue -o boot.img disk
 set +xe
 
 if [ "$1" = "run" ]; then
-	qemu-system-i386 -cdrom boot.img
+	qemu-system-i386 -cdrom boot.img -serial stdio
 fi

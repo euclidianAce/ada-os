@@ -36,6 +36,9 @@ __gnat_rcheck_CE_Overflow_Check:
 .global __gnat_rcheck_CE_Range_Check
 __gnat_rcheck_CE_Range_Check:
 
+.global __gnat_rcheck_CE_Index_Check
+__gnat_rcheck_CE_Index_Check:
+
 	cli
 
 hang:
