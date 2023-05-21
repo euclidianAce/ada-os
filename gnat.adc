@@ -1,0 +1,13 @@
+pragma Discard_Names; -- Don't generate strings for enums
+pragma Restrictions (No_Enumeration_Maps);
+pragma Normalize_Scalars; -- Force scalars to be initialized
+pragma Restrictions (No_Exception_Propagation); -- Uncaught exceptions call last chance handler instead of being propagated
+pragma Restrictions (No_Finalization); -- Limits use of controlled types
+pragma Restrictions (No_Tasking); -- Disallow use of tasks
+pragma Restrictions (No_Protected_Types); -- Disallow use of protected types
+pragma Restrictions (No_Delay); -- Disallow use of delay statements
+pragma Restrictions (No_Recursion); -- Restrict use of recursion
+pragma Restrictions (No_Allocators); -- Restrict use of dynamic memory
+pragma Restrictions (No_Dispatch); -- No dynamic dispatch
+pragma Restrictions (No_Implicit_Dynamic_Code); -- No nested subprograms
+pragma Restrictions (No_Secondary_Stack);
