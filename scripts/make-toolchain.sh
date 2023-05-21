@@ -54,28 +54,11 @@ make_gcc () {
 
 	pushd $build_dir
 
-	# To build a cross compiler with Ada support, we need an initial one with C support
-	log "Building initial gcc"
+	log "Building gcc with only Ada support"
 	$gcc_dir/configure \
 		--target="$build_target" \
 		--prefix="$build_prefix" \
-		--enable-languages="c" \
-		--disable-multilib \
-		--disable-shared \
-		--disable-nls \
-		--with-gmp="/usr/local" \
-		--with-mpc="/usr/local" \
-		--with-mpfr="/usr/local" \
-		--without-headers
-
-	make -j $concurrency all-gcc
-	make -j $concurrency install-gcc
-
-	log "Building gcc with Ada support"
-	$gcc_dir/configure \
-		--target="$build_target" \
-		--prefix="$build_prefix" \
-		--enable-languages="c,c++,ada" \
+		--enable-languages="ada" \
 		--disable-libada \
 		--disable-nls \
 		--disable-threads \
