@@ -12,7 +12,7 @@ ADA_RUNTIME_DIR="../ada-runtime"
 ######################
 
 compile_ada () {
-	$GCC -x ada --RTS=$ADA_RUNTIME_DIR -c $@
+	$GCC -x ada --RTS=$ADA_RUNTIME_DIR -gnatec=gnat.adc -c $@
 }
 
 compile_asm () {
@@ -37,3 +37,9 @@ compile_asm ../source/startup.s -o startup.o
 link -o disk/boot/kernel.elf -T ../source/linker.ld vga_console.o kernel.o startup.o
 cp ../grub.cfg disk/boot/grub
 grub-mkrescue -o boot.img disk
+
+set +xe
+
+if [ "$1" = "run" ]; then
+	qemu-system-i386 -cdrom boot.img
+fi
