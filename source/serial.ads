@@ -1,6 +1,6 @@
 with System.Storage_Elements;
 use System.Storage_Elements;
-package Serial is
+package Serial with Preelaborate is
    type Port_Address is range 0 .. 2 ** 16 - 1;
    for Port_Address'Size use 16;
 
@@ -16,6 +16,17 @@ package Serial is
    -- Returns True on success
    function Initialize (Port : Port_Address) return Boolean;
 
+   -- Non blocking read and write functions that directly correspond to the x86
+   -- instructions `in` and `out`
+   function In_B (Port : Port_Address) return Storage_Element;
+   pragma Inline (In_B);
+
+   procedure Out_B (
+      Port  : Port_Address;
+      Value : Storage_Element);
+   pragma Inline (Out_B);
+
+   -- Blocking functions
    function Read (
       Port : Port_Address) return Storage_Element;
 

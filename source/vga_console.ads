@@ -1,4 +1,5 @@
 with System;
+with Serial;
 
 package VGA_Console with Preelaborate is
    type Background_Color is (
@@ -112,5 +113,86 @@ package VGA_Console with Preelaborate is
       Background : Background_Color := Black);
 
    procedure Clear (Color : Background_Color := Black);
+
+   -- CRTC_Address_Register : constant Port_Address := 16#3x4#;
+   -- CRTC_Data_Register    : constant Port_Address := 16#3x5#;
+
+   Misc_Output_Register_Write : constant Serial.Port_Address := 16#3c2#;
+   Misc_Output_Register_Read  : constant Serial.Port_Address := 16#3cc#;
+
+   type Clock_Select_Type is (
+      Clock_25_Mhz,
+      Clock_28_Mhz,
+      External_1,
+      External_2);
+   for Clock_Select_Type'Size use 2;
+   for Clock_Select_Type use (
+      Clock_25_Mhz => 2#00#,
+      Clock_28_Mhz => 2#01#,
+      External_1   => 2#10#,
+      External_2   => 2#11#);
+
+   type Odd_Even_Page_Selector is (
+      Low,
+      High);
+   for Odd_Even_Page_Selector'Size use 1;
+   for Odd_Even_Page_Selector use (
+      Low  => 0,
+      High => 1);
+
+   type Horizontal_Sync_Polarity is (
+      Positive,
+      Negative);
+   for Horizontal_Sync_Polarity'Size use 1;
+   for Horizontal_Sync_Polarity use (
+      Positive => 0,
+      Negative => 1);
+
+   type Vertical_Sync_Polarity is (
+      Positive,
+      Negative);
+   for Vertical_Sync_Polarity'Size use 1;
+   for Vertical_Sync_Polarity use (
+      Positive => 0,
+      Negative => 1);
+
+   type Misc_Output_Register is
+      record
+         IO_Address_Select    : Boolean;
+         RAM_Enable           : Boolean;
+         Clock_Select         : Clock_Select_Type;
+         Odd_Even_Page        : Odd_Even_Page_Selector;
+         Horizontal_Polarity  : Horizontal_Sync_Polarity;
+         Vertical_Polarity    : Vertical_Sync_Polarity;
+      end record;
+   for Misc_Output_Register'Size use 8;
+   for Misc_Output_Register use
+      record
+         IO_Address_Select    at 0 range 0 .. 0;
+         RAM_Enable           at 0 range 1 .. 1;
+         Clock_Select         at 0 range 2 .. 3;
+         Odd_Even_Page        at 0 range 5 .. 5;
+         Horizontal_Polarity  at 0 range 6 .. 6;
+         Vertical_Polarity    at 0 range 7 .. 7;
+      end record;
+
+   type Cursor_State is (Enabled, Disabled);
+   for Cursor_State use (Enabled => 0, Disabled => 1);
+   for Cursor_State'Size use 1;
+
+   type Cursor_Scan_Line is range 0 .. 2 ** 5 - 1;
+   for Cursor_Scan_Line'Size use 5;
+
+   type Cursor_Start_Register is
+      record
+         Scan_Line_Start : Cursor_Scan_Line;
+         State           : Cursor_State;
+      end record;
+
+   for Cursor_Start_Register use
+      record
+         Scan_Line_Start at 0 range 0 .. 4;
+         State           at 0 range 5 .. 5;
+      end record;
 
 end VGA_Console;

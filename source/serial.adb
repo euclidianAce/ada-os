@@ -1,5 +1,6 @@
 with System;
 with System.Machine_Code;
+
 package body Serial is
 
    procedure Out_B (
@@ -13,7 +14,6 @@ package body Serial is
             Port_Address'Asm_Input ("d", Port)),
          Volatile => True);
    end Out_B;
-   pragma Inline (Out_B);
 
    function In_B (Port : Port_Address) return Storage_Element is
       Result : Storage_Element;
@@ -24,7 +24,6 @@ package body Serial is
          Outputs => Storage_Element'Asm_Output ("=a", Result));
       return Result;
    end In_B;
-   pragma Inline (In_B);
 
    function Initialize (Port : Port_Address) return Boolean is
    begin
