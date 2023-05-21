@@ -31,10 +31,9 @@ mkdir -p build
 cd build
 
 mkdir -p disk/boot/grub
-compile_ada ../source/vga_console.adb
-compile_ada ../source/kernel.adb
+compile_ada ../source/*.adb
 compile_asm ../source/startup.s -o startup.o
-link -o disk/boot/kernel.elf -T ../source/linker.ld vga_console.o kernel.o startup.o
+link -o disk/boot/kernel.elf -T ../source/linker.ld *.o
 cp ../grub.cfg disk/boot/grub
 grub-mkrescue -o boot.img disk
 
