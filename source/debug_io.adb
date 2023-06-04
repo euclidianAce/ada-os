@@ -8,6 +8,7 @@ package body Debug_IO is
    procedure Put (Message : String) is
       Elements : Storage_Array (1 .. Message'Length)
          with Address => Message'Address;
+      pragma Import (Ada, Elements);
    begin
       for Element of Elements loop
          Serial.Write (Serial.Com1, Element);
@@ -17,6 +18,7 @@ package body Debug_IO is
    procedure Put (Message : Character) is
       Element : Storage_Element
          with Address => Message'Address;
+      pragma Import (Ada, Element);
    begin
       Serial.Write (Serial.Com1, Element);
    end Put;
