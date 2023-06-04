@@ -11,6 +11,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           buildInputs = with pkgs; [
+	    gdb
             grub2
             xorriso
             curl

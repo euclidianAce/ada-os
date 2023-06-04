@@ -1,4 +1,8 @@
+.intel_syntax noprefix
+
 .global startup
+.global kernel_stack_pointer
+.global hang
 # multiboot header
 .set ALIGN,   1 << 0
 .set MEMINFO, 1 << 1  # provide memory map
@@ -14,18 +18,27 @@ header:
 .long CHECKSUM
 
 # initial kernel stack
-.set STACKSIZE, 0x4000 # 16k
-.lcomm stack, STACKSIZE # reserve stack on 32 bit boundary
-.comm mbd, 4 # reserve symbol mbd
-.comm magic, 4 # reserve symbol magic
+.set STACKSIZE, 0x4000  # 16k
+.lcomm kernel_stack_pointer, STACKSIZE # reserve stack on 32 bit boundary
+.comm mbd, 4            # reserve symbol mbd
+.comm magic, 4          # reserve symbol magic
 
 startup:
-	movl $(stack + STACKSIZE), %esp # setup stack
+	lea esp, [kernel_stack_pointer + STACKSIZE] # setup stack
 
-	movl %eax, magic # indicates that the os was loaded by a multiboot compliant boot loader
-	movl %ebx, mbd # address of multiboot info
+	mov eax, magic              # indicates that the os was loaded by a multiboot compliant boot loader
+	mov ebx, mbd                # address of multiboot info
 
 	call Kernel_Start
+
+hang:
+	cli
+
+1:
+	hlt
+	jmp 1b
+
+# TODO: give panic some tagged union with the data given to these runtime functions
 
 .global __gnat_rcheck_CE_Invalid_Data
 __gnat_rcheck_CE_Invalid_Data:
@@ -39,8 +52,5 @@ __gnat_rcheck_CE_Range_Check:
 .global __gnat_rcheck_CE_Index_Check
 __gnat_rcheck_CE_Index_Check:
 
-	cli
+	jmp Kernel_Panic_Handler
 
-hang:
-	hlt
-	jmp hang

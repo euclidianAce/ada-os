@@ -83,6 +83,11 @@ package VGA_Console with Preelaborate is
       end record;
 
    for Cell'Size use 16;
+   for Cell use
+      record
+         Char  at 0 range 0 .. 7;
+         Color at 1 range 0 .. 7;
+      end record;
 
    Screen_Width  : constant := 80;
    Screen_Height : constant := 25;
@@ -92,9 +97,8 @@ package VGA_Console with Preelaborate is
    type Screen_Cells is array (Row, Column) of Cell;
    pragma Pack (Screen_Cells);
 
-   Video_Memory : Screen_Cells;
-
-   for Video_Memory'Address use System'To_Address (16#000B_8000#);
+   Video_Memory : Screen_Cells
+      with Address => System'To_Address (16#000B_8000#);
    pragma Import (Ada, Video_Memory);
 
    procedure Put (
