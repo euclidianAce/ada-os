@@ -3,6 +3,7 @@
 .global startup
 .global kernel_stack_pointer
 .global hang
+.global interrupt_service_request_wrapper
 # multiboot header
 .set ALIGN,   1 << 0
 .set MEMINFO, 1 << 1  # provide memory map
@@ -54,3 +55,21 @@ __gnat_rcheck_CE_Index_Check:
 
 	jmp Kernel_Panic_Handler
 
+.global reload_segments
+reload_segments:
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+	jmp 0x08:.reload_cs
+.reload_cs:
+	ret
+
+.align 4
+interrupt_service_request_wrapper:
+	pusha
+	call Kernel_Interrupt_Handler
+	popa
+	iret
