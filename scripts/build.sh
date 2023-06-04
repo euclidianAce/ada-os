@@ -12,15 +12,15 @@ ADA_RUNTIME_DIR="../ada-runtime"
 ######################
 
 compile_ada () {
-	$GCC -x ada --RTS=$ADA_RUNTIME_DIR -gnatec=gnat.adc -c $@
+	$GCC -nostdlib -nostdinc -x ada -gnat2022 --RTS=$ADA_RUNTIME_DIR -gnatec=../gnat.adc -c $@
 }
 
 compile_asm () {
-	$AS $@
+	$AS --32 -march=i386 $@
 }
 
 link () {
-	$LD $@
+	$LD --gc-sections $@
 }
 
 #####################
@@ -31,14 +31,15 @@ mkdir -p build
 cd build
 
 mkdir -p disk/boot/grub
-compile_ada ../source/*.adb
+compile_ada -gnatg ../ada-runtime/adainclude/*.adb -gnatyN -Os
+compile_ada ../source/*.adb -Os -g
 compile_asm ../source/startup.s -o startup.o
 link -o disk/boot/kernel.elf -T ../source/linker.ld *.o
+../toolchain/cross/i686-elf/bin/i686-elf-objcopy --only-keep-debug disk/boot/kernel.elf kernel.sym
 cp ../grub.cfg disk/boot/grub
 grub-mkrescue -o boot.img disk
 
-set +xe
-
 if [ "$1" = "run" ]; then
-	qemu-system-i386 -cdrom boot.img -serial stdio
+	shift
+	qemu-system-i386 -cdrom boot.img -serial stdio -s -no-reboot -d cpu_reset "$@"
 fi
