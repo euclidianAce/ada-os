@@ -13,14 +13,12 @@ package body Interrupts is
    end Enable;
 
    -- LIDT
-   function Load_Descriptor_Table_Register return Descriptor_Tables.Register is
-      Result : aliased Descriptor_Tables.Register;
+   procedure Load_Descriptor_Table_Register (Register : Descriptor_Tables.Register) is
    begin
       System.Machine_Code.Asm (
          "lidt %0",
-         Outputs => Descriptor_Tables.Register'Asm_Output ("=m", Result),
+         Inputs => Descriptor_Tables.Register'Asm_Input ("m", Register),
          Volatile => True);
-      return Result;
    end Load_Descriptor_Table_Register;
 
    procedure Set_Address (
@@ -36,13 +34,4 @@ package body Interrupts is
       On.Offset_0_15  := U16 (Int_Addr and 16#ffff#);
       On.Offset_16_31 := U16 (Shift_Right (Int_Addr, 16));
    end Set_Address;
-
-   -- SIDT
-   procedure Store_Descriptor_Table_Register (Register : Descriptor_Tables.Register) is
-   begin
-      System.Machine_Code.Asm (
-         "sidt %0",
-         Inputs => Descriptor_Tables.Register'Asm_Input ("m", Register),
-         Volatile => True);
-   end Store_Descriptor_Table_Register;
 end Interrupts;

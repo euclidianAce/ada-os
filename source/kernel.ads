@@ -16,4 +16,6 @@ package Kernel is
       Convention    => Asm,
       Entity        => Interrupt_Handler,
       External_Name => "Kernel_Interrupt_Handler");
+
+   procedure Log (Message : String);
 end Kernel;

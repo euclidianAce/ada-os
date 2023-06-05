@@ -1,13 +1,14 @@
 with Debug_IO;
+with Descriptor_Tables.Global;
+with Descriptor_Tables;
 with Integers;
 with Interrupts;
 with Serial;
-with VGA_Console;
-with Terminal;
-with Descriptor_Tables;
-with Descriptor_Tables.Global;
+with System.Machine_Code;
 with System.Storage_Elements;
 with System;
+with Terminal;
+with VGA_Console;
 
 use System.Storage_Elements;
 use type VGA_Console.Cursor_State;
@@ -16,8 +17,7 @@ package body Kernel is
    -- called by asm interrupt handler
    procedure Interrupt_Handler is
    begin
-      Debug_IO.Put_Line ("Interrupt!");
-      Panic;
+      Log ("Interrupt!");
    end Interrupt_Handler;
 
    procedure Memory_Copy (
@@ -56,18 +56,6 @@ package body Kernel is
          Destination_Elements (I) := Source_Elements (I);
       end loop;
    end Memory_Copy;
-
-   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := [others => Interrupts.Null_Gate];
-   pragma Export (
-      Convention    => Asm,
-      Entity        => Interrupt_Descriptor_Table,
-      External_Name => "Kernel_IDT");
-
-   -- procedure Interrupt_Service_Request_Wrapper;
-   -- pragma Import (
-      -- Convention    => Asm,
-      -- Entity        => Interrupt_Service_Request_Wrapper,
-      -- External_Name => "interrupt_service_request_wrapper");
 
    procedure Reload_Segments;
    pragma Import (
@@ -155,8 +143,6 @@ package body Kernel is
       use type Integers.U16;
       use type Integers.U20;
    begin
-      Interrupts.Disable;
-
       Log ("Attempting to setup gdt...");
 
       Null_Segment := Descriptor_Tables.Global.Null_Segment_Descriptor;
@@ -259,13 +245,41 @@ package body Kernel is
 
       Log ("About to reload segments...");
       Reload_Segments;
-
-      Interrupts.Enable;
    end Setup_GDT;
 
+   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := [others => Interrupts.Null_Gate];
+   pragma Export (
+      Convention    => Asm,
+      Entity        => Interrupt_Descriptor_Table,
+      External_Name => "Kernel_IDT");
+
+   procedure Interrupt_Service_Request_Wrapper;
+   pragma Import (
+      Convention    => Asm,
+      Entity        => Interrupt_Service_Request_Wrapper,
+      External_Name => "interrupt_service_request_wrapper");
+
    procedure Setup_IDT is
+      use type Integers.U16;
    begin
-      Log ("TODO: setup idt");
+      for Vec in Interrupt_Descriptor_Table'Range loop
+         declare
+            Gate : Interrupts.Gate
+               with Address => Interrupt_Descriptor_Table (Vec)'Address;
+            pragma Import (Asm, Gate);
+         begin
+            Interrupts.Set_Address (Gate, Interrupt_Service_Request_Wrapper'Address);
+            Gate.Segment_Selector := 16#08#;
+            Gate.Kind := Interrupts.Thirty_Two_Bit_Interrupt_Gate;
+            Gate.Descriptor_Privilege_Level := Descriptor_Tables.Ring_0;
+            Gate.Present := True;
+         end;
+      end loop;
+
+      Log ("Loading interrupt descriptor table...");
+      Interrupts.Load_Descriptor_Table_Register ([
+         Limit        => Interrupt_Descriptor_Table'Size / 8,
+         Base_Address => Interrupt_Descriptor_Table'Address]);
    end Setup_IDT;
 
    procedure Start is
@@ -284,8 +298,10 @@ package body Kernel is
       Terminal.Clear;
       Terminal.Flush;
 
+      Interrupts.Disable;
       Setup_GDT;
       Setup_IDT;
+      Interrupts.Enable;
 
       declare
          Aliased_Byte : Storage_Element := Serial.In_B (VGA_Console.Misc_Output_Register_Read);
@@ -318,7 +334,6 @@ package body Kernel is
          Log ("Cursor should now be disabled");
       end;
 
-      -- System.Machine_Code.Asm ("int $55", Volatile => True);
+      System.Machine_Code.Asm ("int $32", Volatile => True);
    end Start;
-
 end Kernel;

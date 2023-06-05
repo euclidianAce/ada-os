@@ -65,9 +65,7 @@ package Interrupts is
    type Descriptor_Table is array (Vector) of aliased Gate
       with Pack;
 
-   function Load_Descriptor_Table_Register return Descriptor_Tables.Register
-      with Inline;
-   procedure Store_Descriptor_Table_Register (Register : Descriptor_Tables.Register)
+   procedure Load_Descriptor_Table_Register (Register : Descriptor_Tables.Register)
       with Inline;
 
    Divide_By_Zero                : constant Vector := 0;
