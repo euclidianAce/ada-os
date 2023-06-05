@@ -1,4 +1,3 @@
-with Serial;
 with VGA_Console;
 
 package Terminal is
@@ -26,5 +25,8 @@ private
    Buffer : VGA_Console.Screen_Cells := [
       others => [others => [' ', [VGA_Console.Black, VGA_Console.Black]]]];
    Dirty  : Dirty_Cells := [others => [others => True]];
+
+   procedure Increment_Column (By : VGA_Console.Column);
+   procedure Increment_Row (By : VGA_Console.Row);
 
 end Terminal;

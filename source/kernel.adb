@@ -6,21 +6,31 @@ with VGA_Console;
 with Terminal;
 with Descriptor_Tables;
 with Descriptor_Tables.Global;
-with System.Machine_Code;
 with System.Storage_Elements;
-with System.Address_To_Access_Conversions;
+with System;
 
 use System.Storage_Elements;
-use type Serial.Port_Address;
 use type VGA_Console.Cursor_State;
 
 package body Kernel is
+   -- called by asm interrupt handler
+   procedure Interrupt_Handler is
+   begin
+      Debug_IO.Put_Line ("Interrupt!");
+      Panic;
+   end Interrupt_Handler;
+
+   procedure Memory_Copy (
+      Destination : System.Address;
+      Source      : System.Address;
+      Units       : System.Storage_Elements.Storage_Count);
+   pragma Export (C, Memory_Copy, "memcpy");
 
    procedure Log (Message : String) is
       Prefix : constant String :=
-         (Character'Val (16#1b#), '[', '3', '7', 'm') &
+         [Character'Val (16#1b#), '[', '3', '7', 'm'] &
          "Kernel: " &
-         (Character'Val (16#1b#), '[', '0', 'm');
+         [Character'Val (16#1b#), '[', '0', 'm'];
    begin
       Debug_IO.Put (Prefix);
       Debug_IO.Put_Line (Message);
@@ -28,17 +38,36 @@ package body Kernel is
       Terminal.Flush;
    end Log;
 
-   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := (others => Interrupts.Null_Gate);
+   -- Very crappy impl to satisfy generated code
+   procedure Memory_Copy (
+      Destination : System.Address;
+      Source      : System.Address;
+      Units       : System.Storage_Elements.Storage_Count) is
+
+      type Elements is array (1 .. Units) of System.Storage_Elements.Storage_Element;
+
+      Destination_Elements : Elements with Address => Destination;
+      Source_Elements      : Elements with Address => Source;
+
+      pragma Import (Ada, Destination_Elements);
+      pragma Import (Ada, Source_Elements);
+   begin
+      for I in 1 .. Units loop
+         Destination_Elements (I) := Source_Elements (I);
+      end loop;
+   end Memory_Copy;
+
+   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := [others => Interrupts.Null_Gate];
    pragma Export (
       Convention    => Asm,
       Entity        => Interrupt_Descriptor_Table,
       External_Name => "Kernel_IDT");
 
-   procedure Interrupt_Service_Request_Wrapper;
-   pragma Import (
-      Convention    => Asm,
-      Entity        => Interrupt_Service_Request_Wrapper,
-      External_Name => "interrupt_service_request_wrapper");
+   -- procedure Interrupt_Service_Request_Wrapper;
+   -- pragma Import (
+      -- Convention    => Asm,
+      -- Entity        => Interrupt_Service_Request_Wrapper,
+      -- External_Name => "interrupt_service_request_wrapper");
 
    procedure Reload_Segments;
    pragma Import (
@@ -63,6 +92,42 @@ package body Kernel is
       Convention    => Asm,
       Entity        => Stack,
       External_Name => "kernel_stack_pointer");
+
+   procedure Panic is
+      procedure Hang;
+      pragma No_Return (Hang);
+      pragma Import (
+         Convention => Asm,
+         Entity => Hang,
+         External_Name => "hang");
+   begin
+      Debug_IO.Put_Line ("Panic! (Todo, get panic info)");
+
+      -- VGA_Console.Clear (VGA_Console.Red);
+      VGA_Console.Put (
+         "Kernel Panic! :(",
+         1, VGA_Console.Row'Last,
+         Foreground => VGA_Console.White,
+         Background => VGA_Console.Red);
+
+      -- VGA_Console.Put (
+         -- " * TODO: dump some sorta stack trace here?",
+         -- 2, 3,
+         -- Foreground => VGA_Console.White,
+         -- Background => VGA_Console.Red);
+
+      -- declare -- Dump a backtrace (just of addresses for now)
+         -- Row : VGA_Console.Row := 3;
+         -- BP  : System.Address;
+      -- begin
+         -- System.Machine_Code.Asm (
+            -- "mov %0, ebp",
+            -- Outputs  => System.Address'Asm_Output (BP, "g"),
+            -- Volatile => True);
+      -- end;
+
+      Hang;
+   end Panic;
 
    procedure Setup_GDT is
       Null_Segment : Descriptor_Tables.Global.Segment_Descriptor
@@ -159,11 +224,11 @@ package body Kernel is
       Task_State := (
          Previous_Task_Link   => 0,
          Esp0                 => Integers.Address_To_U32 (Stack),
-         SS0                  => 16#10#,
+         Ss0                  => 16#10#,
          Esp1                 => 0,
-         SS1                  => 0,
+         Ss1                  => 0,
          Esp2                 => 0,
-         SS2                  => 0,
+         Ss2                  => 0,
          Cr3                  => 0,
          Eip                  => 0,
          Eflags               => 0,
@@ -184,7 +249,7 @@ package body Kernel is
          Ldt_Segment_Selector => 0,
          Trap                 => False,
          Io_Map_Base_Address  => 0,
-         SSP                  => 0,
+         Ssp                  => 0,
          others               => <>);
 
       Log ("About to load global descriptor table...");
@@ -255,73 +320,5 @@ package body Kernel is
 
       -- System.Machine_Code.Asm ("int $55", Volatile => True);
    end Start;
-
-   procedure Panic is
-      procedure Hang;
-      pragma No_Return (Hang);
-      pragma Import (
-         Convention => Asm,
-         Entity => Hang,
-         External_Name => "hang");
-   begin
-      Debug_IO.Put_Line ("Panic! (Todo, get panic info)");
-
-      -- VGA_Console.Clear (VGA_Console.Red);
-      VGA_Console.Put (
-         "Kernel Panic! :(",
-         1, VGA_Console.Row'Last,
-         Foreground => VGA_Console.White,
-         Background => VGA_Console.Red);
-
-      -- VGA_Console.Put (
-         -- " * TODO: dump some sorta stack trace here?",
-         -- 2, 3,
-         -- Foreground => VGA_Console.White,
-         -- Background => VGA_Console.Red);
-
-      -- declare -- Dump a backtrace (just of addresses for now)
-         -- Row : VGA_Console.Row := 3;
-         -- BP  : System.Address;
-      -- begin
-         -- System.Machine_Code.Asm (
-            -- "mov %0, ebp",
-            -- Outputs  => System.Address'Asm_Output (BP, "g"),
-            -- Volatile => True);
-      -- end;
-
-      Hang;
-   end Panic;
-
-   -- called by asm interrupt handler
-   procedure Interrupt_Handler is
-   begin
-      Debug_IO.Put_Line ("Interrupt!");
-      Panic;
-   end Interrupt_Handler;
-
-   procedure Memory_Copy (
-      Destination : System.Address;
-      Source      : System.Address;
-      Units       : System.Storage_Elements.Storage_Count);
-   pragma Export (C, Memory_Copy, "memcpy");
-
-   -- Very crappy impl to satisfy generated code
-   procedure Memory_Copy (
-      Destination : System.Address;
-      Source      : System.Address;
-      Units       : System.Storage_Elements.Storage_Count) is
-
-      type Elements is array (1 .. Units) of System.Storage_Elements.Storage_Element;
-
-      Destination_Elements : Elements with Address => Destination;
-      Source_Elements      : Elements with Address => Source;
-
-      pragma Import (Ada, Destination_Elements);
-      pragma Import (Ada, Source_Elements);
-   begin
-      for I in 1 .. Units loop
-         Destination_Elements (I) := Source_Elements (I);
-      end loop;
-   end Memory_Copy;
 
 end Kernel;

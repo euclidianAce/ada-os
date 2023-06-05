@@ -1,6 +1,3 @@
-with Integers; use Integers;
-with System;
-
 package Descriptor_Tables.Global is
    type Descriptor_Type is (System_Descriptor, Code_Or_Data_Descriptor);
    for Descriptor_Type use (System_Descriptor => 0, Code_Or_Data_Descriptor => 1);
@@ -97,13 +94,13 @@ package Descriptor_Tables.Global is
          Previous_Task_Link   : Segment_Selector;
          Reserved_1           : U16 := 0;
          Esp0                 : U32;
-         SS0                  : U16;
+         Ss0                  : U16;
          Reserved_2           : U16 := 0;
          Esp1                 : U32;
-         SS1                  : U16;
+         Ss1                  : U16;
          Reserved_3           : U16 := 0;
          Esp2                 : U32;
-         SS2                  : U16;
+         Ss2                  : U16;
          Reserved_4           : U16 := 0;
          Cr3                  : U16;
          Eip                  : U32;
@@ -133,7 +130,7 @@ package Descriptor_Tables.Global is
          Trap                 : Boolean;
          Reserved_12          : U15 := 0;
          Io_Map_Base_Address  : U16;
-         SSP                  : U32;
+         Ssp                  : U32;
       end record;
 
    for Task_State'Size use 108 * 8;
@@ -142,13 +139,13 @@ package Descriptor_Tables.Global is
          Previous_Task_Link   at 0   range 0  .. 15;
          Reserved_1           at 0   range 16 .. 31;
          Esp0                 at 4   range 0  .. 31;
-         SS0                  at 8   range 0  .. 15;
+         Ss0                  at 8   range 0  .. 15;
          Reserved_2           at 8   range 16 .. 31;
          Esp1                 at 12  range 0  .. 31;
-         SS1                  at 16  range 0  .. 15;
+         Ss1                  at 16  range 0  .. 15;
          Reserved_3           at 16  range 16 .. 31;
          Esp2                 at 20  range 0  .. 31;
-         SS2                  at 24  range 0  .. 15;
+         Ss2                  at 24  range 0  .. 15;
          Reserved_4           at 24  range 16 .. 31;
          Cr3                  at 28  range 0  .. 31;
          Eip                  at 32  range 0  .. 31;
@@ -178,7 +175,7 @@ package Descriptor_Tables.Global is
          Trap                 at 100 range 0  .. 0;
          Reserved_12          at 100 range 1  .. 15;
          Io_Map_Base_Address  at 100 range 16 .. 31;
-         SSP                  at 104 range 0  .. 31;
+         Ssp                  at 104 range 0  .. 31;
       end record;
 
    procedure Set_Base (

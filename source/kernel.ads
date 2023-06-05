@@ -1,5 +1,3 @@
-with System;
-
 package Kernel is
    procedure Start;
    pragma Export (

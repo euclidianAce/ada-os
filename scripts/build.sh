@@ -9,10 +9,42 @@ AS="$TOOLCHAIN_BIN/i686-elf-as"
 LD="$TOOLCHAIN_BIN/i686-elf-ld"
 ADA_RUNTIME_DIR="../ada-runtime"
 
+ADA_FLAGS="\
+-gnatwa \
+-gnaty3 \
+-gnatya \
+-gnatyA \
+-gnatyB \
+-gnatyb \
+-gnatyB \
+-gnatyC \
+-gnatyd \
+-gnatyD \
+-gnatye \
+-gnatyf \
+-gnatyh \
+-gnatyi \
+-gnatyI \
+-gnatyk \
+-gnatyl \
+-gnatyL5 \
+-gnatyM120 \
+-gnatyn \
+-gnatyO \
+-gnatyo \
+-gnatyp \
+-gnatyr \
+-gnatyS \
+-gnatyt \
+-gnatyu \
+-gnatyx \
+-gnatW8 \
+-gnatw.X"
+
 ######################
 
 compile_ada () {
-	$GCC -nostdlib -nostdinc -x ada -gnat2022 --RTS=$ADA_RUNTIME_DIR -gnatec=../gnat.adc -c $@
+	$GCC -nostdlib -nostdinc -x ada -gnat2022 -ffunction-sections -fdata-sections --RTS=$ADA_RUNTIME_DIR -gnatec=../gnat.adc -c $@
 }
 
 compile_asm () {
@@ -32,7 +64,7 @@ cd build
 
 mkdir -p disk/boot/grub
 compile_ada -gnatg ../ada-runtime/adainclude/*.adb -gnatyN -Os
-compile_ada ../source/*.adb -Os -g
+compile_ada ../source/*.adb -Os -g $ADA_FLAGS
 compile_asm ../source/startup.s -o startup.o
 link -o disk/boot/kernel.elf -T ../source/linker.ld *.o
 ../toolchain/cross/i686-elf/bin/i686-elf-objcopy --only-keep-debug disk/boot/kernel.elf kernel.sym

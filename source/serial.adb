@@ -2,19 +2,6 @@ with System;
 with System.Machine_Code;
 
 package body Serial is
-
-   procedure Out_B (
-      Port  : Port_Address;
-      Value : Storage_Element) is
-   begin
-      System.Machine_Code.Asm (
-         "out %0, %1",
-         Inputs => (
-            Storage_Element'Asm_Input ("a", Value),
-            Port_Address'Asm_Input ("d", Port)),
-         Volatile => True);
-   end Out_B;
-
    function In_B (Port : Port_Address) return Storage_Element is
       Result : Storage_Element;
    begin
@@ -46,6 +33,18 @@ package body Serial is
       Out_B (Port + 4, 16#0f#);
       return True;
    end Initialize;
+
+   procedure Out_B (
+      Port  : Port_Address;
+      Value : Storage_Element) is
+   begin
+      System.Machine_Code.Asm (
+         "out %0, %1",
+         Inputs => [
+            Storage_Element'Asm_Input ("a", Value),
+            Port_Address'Asm_Input ("d", Port)],
+         Volatile => True);
+   end Out_B;
 
    function Received_Full (Port : Port_Address) return Boolean is
        ((In_B (Port + 5) and 1) /= 0);

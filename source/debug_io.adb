@@ -1,5 +1,4 @@
 with Serial;
-with VGA_Console;
 with System.Storage_Elements;
 
 use System.Storage_Elements;
