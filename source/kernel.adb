@@ -262,6 +262,7 @@ package body Kernel is
    procedure Setup_IDT is
       use type Integers.U16;
    begin
+      Log ("Attempting to setup idt...");
       for Vec in Interrupt_Descriptor_Table'Range loop
          declare
             Gate : Interrupts.Gate
@@ -276,7 +277,7 @@ package body Kernel is
          end;
       end loop;
 
-      Log ("Loading interrupt descriptor table...");
+      Log ("About to load interrupt descriptor table...");
       Interrupts.Load_Descriptor_Table_Register ([
          Limit        => Interrupt_Descriptor_Table'Size / 8,
          Base_Address => Interrupt_Descriptor_Table'Address]);
@@ -334,6 +335,8 @@ package body Kernel is
          Log ("Cursor should now be disabled");
       end;
 
+      Log ("About to do a software interrupt...");
       System.Machine_Code.Asm ("int $32", Volatile => True);
+      Log ("Did a software interrupt. Hopefully everything is fine?");
    end Start;
 end Kernel;
