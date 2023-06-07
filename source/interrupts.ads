@@ -97,4 +97,7 @@ package Interrupts is
 
    procedure Disable with Inline;
    procedure Enable with Inline;
+
+   procedure Disable_Non_Maskable with Inline;
+   procedure Enable_Non_Maskable with Inline;
 end Interrupts;

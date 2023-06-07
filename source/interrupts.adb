@@ -1,5 +1,7 @@
 with System.Machine_Code;
+with System.Storage_Elements;
 with Ada.Unchecked_Conversion;
+with Serial;
 
 package body Interrupts is
    procedure Disable is
@@ -7,10 +9,32 @@ package body Interrupts is
       System.Machine_Code.Asm ("cli", Volatile => True);
    end Disable;
 
+   procedure Disable_Non_Maskable is
+      use type System.Storage_Elements.Storage_Element;
+      E : System.Storage_Elements.Storage_Element;
+   begin
+      Serial.Out_B (
+         16#70#,
+         Serial.In_B (16#70#) or 16#7F#);
+      E := Serial.In_B (16#71#);
+      pragma Unreferenced (E);
+   end Disable_Non_Maskable;
+
    procedure Enable is
    begin
       System.Machine_Code.Asm ("sti", Volatile => True);
    end Enable;
+
+   procedure Enable_Non_Maskable is
+      use type System.Storage_Elements.Storage_Element;
+      E : System.Storage_Elements.Storage_Element;
+   begin
+      Serial.Out_B (
+         16#70#,
+         Serial.In_B (16#70#) and 16#7F#);
+      E := Serial.In_B (16#71#);
+      pragma Unreferenced (E);
+   end Enable_Non_Maskable;
 
    -- LIDT
    procedure Load_Descriptor_Table_Register (Register : Descriptor_Tables.Register) is
