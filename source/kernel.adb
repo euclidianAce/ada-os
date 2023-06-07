@@ -109,6 +109,7 @@ package body Kernel is
       External_Name => "reload_segments");
 
    type Global_Descriptor_Table_Type is array (Positive range <>) of Descriptor_Tables.Global.Segment_Descriptor;
+   for Global_Descriptor_Table_Type'Alignment use 16;
    pragma Pack (Global_Descriptor_Table_Type);
 
    Global_Descriptor_Table : Global_Descriptor_Table_Type (1 .. 6);
@@ -161,14 +162,10 @@ package body Kernel is
 
    procedure Setup_GDT is
       Null_Segment : Descriptor_Tables.Global.Segment_Descriptor
-         with
-            Import,
-            Address => Global_Descriptor_Table (1)'Address;
+         with Import, Address => Global_Descriptor_Table (1)'Address;
 
       Privileged_Code_Segment : Descriptor_Tables.Global.Segment_Descriptor
-         with
-            Import,
-            Address => Global_Descriptor_Table (2)'Address;
+         with Import, Address => Global_Descriptor_Table (2)'Address;
 
       Privileged_Data_Segment : Descriptor_Tables.Global.Segment_Descriptor
          with Import, Address => Global_Descriptor_Table (3)'Address;
