@@ -4,34 +4,35 @@
 .global kernel_stack_pointer
 .global hang
 .global interrupt_service_request_wrapper
-# multiboot header
-.set ALIGN,   1 << 0
-.set MEMINFO, 1 << 1  # provide memory map
-.set FLAGS, ALIGN | MEMINFO
-.set MAGIC, 0x1badb002
-.set CHECKSUM, -(MAGIC + FLAGS)
+.global multiboot2_header
 
-header:
-.align 4, 0x90
+multiboot2_header:
+.align 8
+.long 0xe85250d6 # magic number
+.long 0 # i386 protected mode
+.long multiboot2_header_end - multiboot2_header # header length (in bytes)
+.long -(0xe85250d6 + (multiboot2_header_end - multiboot2_header)) # checksum
 
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+# end tag
+.short 0
+.short 0
+.long 0
+
+multiboot2_header_end:
+
+# tags
 
 # initial kernel stack
 .set STACKSIZE, 0x4000  # 16k
 .lcomm kernel_stack_pointer, STACKSIZE # reserve stack on 32 bit boundary
-.comm mbd, 4            # reserve symbol mbd
-.comm magic, 4          # reserve symbol magic
 
 startup:
 	lea esp, [kernel_stack_pointer + STACKSIZE] # setup stack
-
-	mov eax, magic              # indicates that the os was loaded by a multiboot compliant boot loader
-	mov ebx, mbd                # address of multiboot info
-
 	xor ebp, ebp
-
+	# ebx contains info pointer
+	# eax contains magic number
+	; push ebx
+	; push eax
 	call Kernel_Start
 
 hang:

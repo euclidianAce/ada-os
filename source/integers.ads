@@ -13,10 +13,11 @@ package Integers with Pure is
       Source => U32,
       Target => System.Address);
 
-   subtype Hex_String is String (1 .. 10);
+   subtype Hex_String is String (1 .. 9); -- "0000_0000"
 
-   -- @0000_0000
-   function Hex_Image (Addr : System.Address) return Hex_String;
+   function Hex_Image (Value : U32) return Hex_String;
+   function Hex_Image (Addr : System.Address) return Hex_String
+      is (Hex_Image (Address_To_U32 (Addr)));
 
    type U24 is range 0 .. 2 ** 24 - 1;
    for U24'Size use 24;

@@ -1,8 +1,8 @@
 with Debug_IO;
 with Descriptor_Tables.Global;
 with Descriptor_Tables;
-with Integers;
 with Interrupts;
+with Multiboot2;
 with Serial;
 with System.Address_To_Access_Conversions;
 with System.Machine_Code;
@@ -58,6 +58,27 @@ package body Kernel is
          -- Log ("   " & Hex (Address));
       -- end loop;
    -- end Dump_Stack_Trace;
+
+   procedure Disable_VGA_Cursor is
+      Aliased_Byte : Storage_Element := Serial.In_B (VGA_Console.Misc_Output_Register_Read);
+
+      Reg : VGA_Console.Misc_Output_Register
+         with Address => Aliased_Byte'Address;
+      pragma Import (Ada, Reg);
+      Cursor_Reg : VGA_Console.Cursor_Start_Register
+         with Address => Aliased_Byte'Address;
+      pragma Import (Ada, Cursor_Reg);
+
+      Addr_Port : constant Serial.Port_Address := (if Reg.IO_Address_Select then
+         16#3d4# else 16#3b4#);
+      Data_Port : constant Serial.Port_Address := (if Reg.IO_Address_Select then
+         16#3d5# else 16#3b5#);
+   begin
+      Serial.Out_B (Addr_Port, 16#0a#);
+      Aliased_Byte := Serial.In_B (Data_Port);
+      Cursor_Reg.State := VGA_Console.Disabled;
+      Serial.Out_B (Data_Port, Aliased_Byte);
+   end Disable_VGA_Cursor;
 
    -- called by asm interrupt handler
    procedure Interrupt_Handler is
@@ -322,7 +343,9 @@ package body Kernel is
          Base_Address => Interrupt_Descriptor_Table'Address]);
    end Setup_IDT;
 
-   procedure Start is
+   procedure Start (
+      Magic     : Integers.U32;
+      Info_Addr : System.Address) is
    begin
       if not Serial.Initialize (Serial.Com1) then
          VGA_Console.Put (
@@ -338,47 +361,18 @@ package body Kernel is
       Terminal.Clear;
       Terminal.Flush;
 
-      Interrupts.Disable;
+      Log ("Magic                  => " & Integers.Hex_Image (Magic));
+      Log (" * (Should be " & Integers.Hex_Image (Multiboot2.Magic) & ")");
+      Log ("Multiboot Info Address => " & Integers.Hex_Image (Info_Addr));
+
+      Interrupts.Disable; -- Interrupts should already be disabled, but just to be safe :P
       Setup_GDT;
       Setup_IDT;
       Interrupts.Enable;
-
-      declare
-         Aliased_Byte : Storage_Element := Serial.In_B (VGA_Console.Misc_Output_Register_Read);
-
-         Reg : VGA_Console.Misc_Output_Register
-            with Address => Aliased_Byte'Address;
-         pragma Import (Ada, Reg);
-         Cursor_Reg : VGA_Console.Cursor_Start_Register
-            with Address => Aliased_Byte'Address;
-         pragma Import (Ada, Cursor_Reg);
-
-         Addr_Port : constant Serial.Port_Address := (if Reg.IO_Address_Select then
-            16#3d4# else 16#3b4#);
-         Data_Port : constant Serial.Port_Address := (if Reg.IO_Address_Select then
-            16#3d5# else 16#3b5#);
-      begin
-         Serial.Out_B (Addr_Port, 16#0a#);
-         Aliased_Byte := Serial.In_B (Data_Port);
-
-         if Cursor_Reg.State = VGA_Console.Enabled then
-            Log ("Cursor is enabled");
-         else
-            Log ("Cursor is disabled");
-         end if;
-
-         Cursor_Reg.State := VGA_Console.Disabled;
-         -- Cursor_Reg.Scan_Line_Start := 0;
-
-         Serial.Out_B (Data_Port, Aliased_Byte);
-         Log ("Cursor should now be disabled");
-      end;
+      Disable_VGA_Cursor;
 
       Log ("About to do a software interrupt...");
       System.Machine_Code.Asm ("int $32", Volatile => True);
       Log ("Did a software interrupt. Hopefully everything is fine?");
-
-      Log ("Manually `Panic`ing just to feel something");
-      Panic;
    end Start;
 end Kernel;

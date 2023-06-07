@@ -1,12 +1,16 @@
 with System;
+with Integers;
+
 package Kernel is
    type Address_Array is array (Positive range <>) of System.Address;
    procedure Capture_Stack_Trace (
       Addresses : in out Address_Array) with Inline;
 
-   procedure Start;
+   procedure Start (
+      Magic     : Integers.U32;
+      Info_Addr : System.Address);
    pragma Export (
-      Convention    => Asm,
+      Convention    => C,
       Entity        => Start,
       External_Name => "Kernel_Start");
 
