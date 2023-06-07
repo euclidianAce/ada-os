@@ -1,4 +1,9 @@
+with System;
 package Kernel is
+   type Address_Array is array (Positive range <>) of System.Address;
+   procedure Capture_Stack_Trace (
+      Addresses : in out Address_Array) with Inline;
+
    procedure Start;
    pragma Export (
       Convention    => Asm,

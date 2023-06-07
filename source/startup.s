@@ -30,6 +30,8 @@ startup:
 	mov eax, magic              # indicates that the os was loaded by a multiboot compliant boot loader
 	mov ebx, mbd                # address of multiboot info
 
+	xor ebp, ebp
+
 	call Kernel_Start
 
 hang:

@@ -4,9 +4,9 @@ with Descriptor_Tables;
 with Integers;
 with Interrupts;
 with Serial;
+with System.Address_To_Access_Conversions;
 with System.Machine_Code;
 with System.Storage_Elements;
-with System;
 with Terminal;
 with VGA_Console;
 
@@ -14,6 +14,51 @@ use System.Storage_Elements;
 use type VGA_Console.Cursor_State;
 
 package body Kernel is
+   package Addr_Conv is new System.Address_To_Access_Conversions (System.Address);
+
+   procedure Capture_Stack_Trace (Addresses : in out Address_Array) is
+      use type Integers.U32;
+      use type System.Address;
+
+      Frame_Pointer  : System.Address;
+      Return_Address : System.Address;
+
+      Index : Positive := Addresses'First;
+   begin
+      System.Machine_Code.Asm (
+         "mov %%ebp, %0",
+         Outputs  => System.Address'Asm_Output ("=g", Frame_Pointer),
+         Volatile => True);
+
+      loop
+         exit when Frame_Pointer = System.Null_Address;
+
+         Frame_Pointer  := Addr_Conv.To_Pointer (Frame_Pointer).all;
+         Return_Address := Addr_Conv.To_Pointer (Integers.U32_To_Address (
+            Integers.Address_To_U32 (Frame_Pointer) + System.Address'Size / 8)).all;
+
+         Addresses (Index) := Return_Address;
+         exit when Index = Addresses'Last;
+         Index := @ + 1;
+      end loop;
+   end Capture_Stack_Trace;
+
+   -- procedure Dump_Stack_Trace with Inline is
+      -- function Hex (Addr : System.Address) return Integers.Hex_String renames Integers.Hex_Image;
+
+      -- Addresses : Address_Array (1 .. 16) := [others => System.Null_Address];
+      -- use type System.Address;
+   -- begin
+      -- Capture_Stack_Trace (Addresses);
+
+      -- Log ("Backtrace:");
+      -- for Address of Addresses loop
+         -- exit when Address = System.Null_Address;
+
+         -- Log ("   " & Hex (Address));
+      -- end loop;
+   -- end Dump_Stack_Trace;
+
    -- called by asm interrupt handler
    procedure Interrupt_Handler is
    begin
@@ -88,31 +133,28 @@ package body Kernel is
          Convention => Asm,
          Entity => Hang,
          External_Name => "hang");
+
+      Stack_Trace_Addrs : Address_Array (1 .. 16) := [others => System.Null_Address];
+
+      function Hex (Addr : System.Address) return Integers.Hex_String renames Integers.Hex_Image;
+      use type System.Address;
+      use type VGA_Console.Row;
    begin
-      Debug_IO.Put_Line ("Panic! (Todo, get panic info)");
+      Capture_Stack_Trace (Stack_Trace_Addrs);
 
-      -- VGA_Console.Clear (VGA_Console.Red);
-      VGA_Console.Put (
-         "Kernel Panic! :(",
-         1, VGA_Console.Row'Last,
-         Foreground => VGA_Console.White,
-         Background => VGA_Console.Red);
+      Terminal.Foreground_Color := VGA_Console.White;
+      Terminal.Background_Color := VGA_Console.Red;
+      Terminal.Current_Column := VGA_Console.Column'First;
+      Terminal.Current_Row := VGA_Console.Row'First + 1;
+      Terminal.Clear;
 
-      -- VGA_Console.Put (
-         -- " * TODO: dump some sorta stack trace here?",
-         -- 2, 3,
-         -- Foreground => VGA_Console.White,
-         -- Background => VGA_Console.Red);
-
-      -- declare -- Dump a backtrace (just of addresses for now)
-         -- Row : VGA_Console.Row := 3;
-         -- BP  : System.Address;
-      -- begin
-         -- System.Machine_Code.Asm (
-            -- "mov %0, ebp",
-            -- Outputs  => System.Address'Asm_Output (BP, "g"),
-            -- Volatile => True);
-      -- end;
+      Log (" * Kernel Panic! :(");
+      Log ("");
+      Log (" * Backtrace:");
+      for Addr of Stack_Trace_Addrs loop
+         exit when Addr = System.Null_Address;
+         Log ("    * " & Hex (Addr));
+      end loop;
 
       Hang;
    end Panic;
@@ -338,5 +380,8 @@ package body Kernel is
       Log ("About to do a software interrupt...");
       System.Machine_Code.Asm ("int $32", Volatile => True);
       Log ("Did a software interrupt. Hopefully everything is fine?");
+
+      Log ("Manually `Panic`ing just to feel something");
+      Panic;
    end Start;
 end Kernel;

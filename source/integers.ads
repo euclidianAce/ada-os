@@ -9,6 +9,15 @@ package Integers with Pure is
       Source => System.Address,
       Target => U32);
 
+   function U32_To_Address is new Ada.Unchecked_Conversion (
+      Source => U32,
+      Target => System.Address);
+
+   subtype Hex_String is String (1 .. 10);
+
+   -- @0000_0000
+   function Hex_Image (Addr : System.Address) return Hex_String;
+
    type U24 is range 0 .. 2 ** 24 - 1;
    for U24'Size use 24;
 
