@@ -181,6 +181,58 @@ package body Kernel is
       Hang;
    end Panic;
 
+   procedure Read_Multiboot2_Info (Addr : System.Address) is
+      package Conv is new System.Address_To_Access_Conversions (Integers.U32);
+
+      Total_Size : Integers.U32;
+
+      use type Integers.U32;
+      Current : Integers.U32 := Integers.Address_To_U32 (Addr);
+   begin
+      Log ("Attempting to read multiboot 2 info...");
+      Total_Size := Conv.To_Pointer (Integers.U32_To_Address (Current)).all;
+
+      Log ("   * Total_Size => " & Integers.Hex_Image (Total_Size) & " bytes");
+
+      Current := @ + 8;
+      loop
+         declare
+            use type Multiboot2.Tag_Type;
+            Tag_Type_Int : constant Integers.U32 := Conv.To_Pointer (Integers.U32_To_Address (Current)).all;
+            Tag_Type : Multiboot2.Tag_Type with Import, Address => Tag_Type_Int'Address;
+            Size     : constant Integers.U32 := Conv.To_Pointer (Integers.U32_To_Address (Current + 4)).all;
+         begin
+            -- Enum images require runtime things :P
+            Log ("   * " & (case Tag_Type is
+               when Multiboot2.Null_Tag => "Null",
+               when Multiboot2.Boot_Command_Line_Tag => "Boot_Command_Line_Tag",
+               when Multiboot2.Boot_Loader_Name_Tag => "Boot_Loader_Name_Tag",
+               when Multiboot2.Modules_Tag => "Modules_Tag",
+               when Multiboot2.Memory_Info_Tag => "Memory_Info_Tag",
+               when Multiboot2.BIOS_Boot_Device_Tag => "BIOS_Boot_Device_Tag",
+               when Multiboot2.Memory_Map_Tag => "Memory_Map_Tag",
+               when Multiboot2.VBE_Info_Tag => "VBE_Info_Tag",
+               when Multiboot2.Framebuffer_Info_Tag => "Framebuffer_Info_Tag",
+               when Multiboot2.ELF_Symbols_Tag => "ELF_Symbols_Tag",
+               when Multiboot2.APM_Table_Tag => "APM_Table_Tag",
+               when Multiboot2.EFI_32_Bit_System_Table_Pointer_Tag => "EFI_32_Bit_System_Table_Pointer_Tag",
+               when Multiboot2.EFI_64_Bit_System_Table_Pointer_Tag => "EFI_64_Bit_System_Table_Pointer_Tag",
+               when Multiboot2.SMBIOS_Tables_Tag => "SMBIOS_Tables_Tag",
+               when Multiboot2.ACPI_1_RSDP_Tag => "ACPI_1_RSDP_Tag",
+               when Multiboot2.ACPI_2_RSDP_Tag => "ACPI_2_RSDP_Tag",
+               when Multiboot2.Networking_Info_Tag => "Networking_Info_Tag",
+               when Multiboot2.EFI_Memory_Map_Tag => "EFI_Memory_Map_Tag",
+               when Multiboot2.EFI_Boot_Services_Not_Terminated_Tag => "EFI_Boot_Services_Not_Terminated_Tag",
+               when Multiboot2.EFI_32_Bit_Image_Handle_Pointer_Tag => "EFI_32_Bit_Image_Handle_Pointer_Tag",
+               when Multiboot2.EFI_64_Bit_Image_Handle_Pointer_Tag => "EFI_64_Bit_Image_Handle_Pointer_Tag",
+               when Multiboot2.Image_Load_Base_Physical_Address_Tag => "Image_Load_Base_Physical_Address_Tag"));
+
+            exit when Tag_Type = Multiboot2.Null_Tag;
+            Current := @ + Size - 8;
+         end;
+      end loop;
+   end Read_Multiboot2_Info;
+
    procedure Setup_GDT is
       Null_Segment : Descriptor_Tables.Global.Segment_Descriptor
          with Import, Address => Global_Descriptor_Table (1)'Address;
@@ -361,9 +413,10 @@ package body Kernel is
       Terminal.Clear;
       Terminal.Flush;
 
-      Log ("Magic                  => " & Integers.Hex_Image (Magic));
-      Log (" * (Should be " & Integers.Hex_Image (Multiboot2.Magic) & ")");
+      Log ("Magic => " & Integers.Hex_Image (Magic) & " (Should be " & Integers.Hex_Image (Multiboot2.Magic) & ")");
       Log ("Multiboot Info Address => " & Integers.Hex_Image (Info_Addr));
+
+      Read_Multiboot2_Info (Info_Addr);
 
       Interrupts.Disable; -- Interrupts should already be disabled, but just to be safe :P
       Setup_GDT;
