@@ -13,14 +13,13 @@ multiboot2_header:
 .long multiboot2_header_end - multiboot2_header # header length (in bytes)
 .long -(0xe85250d6 + (multiboot2_header_end - multiboot2_header)) # checksum
 
+.align 8
 # end tag
 .short 0
 .short 0
 .long 0
 
 multiboot2_header_end:
-
-# tags
 
 # initial kernel stack
 .set STACKSIZE, 0x4000  # 16k
@@ -31,8 +30,8 @@ startup:
 	xor ebp, ebp
 	# ebx contains info pointer
 	# eax contains magic number
-	; push ebx
-	; push eax
+	push ebx
+	push eax
 	call Kernel_Start
 
 hang:
