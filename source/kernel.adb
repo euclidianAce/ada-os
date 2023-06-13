@@ -193,7 +193,8 @@ package body Kernel is
       Log ("Attempting to read multiboot 2 info...");
       Total_Size := Conv.To_Pointer (Integers.U32_To_Address (Current)).all;
 
-      Log ("   * Total_Size => " & Integers.Hex_Image (Total_Size) & " bytes");
+      Log ("Total size of multiboot2 info is " & Integers.Hex_Image (Total_Size) & " bytes");
+      Log ("Entries are...");
 
       Current := @ + 8;
       loop
