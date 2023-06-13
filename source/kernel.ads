@@ -8,23 +8,21 @@ package Kernel is
 
    procedure Start (
       Magic     : Integers.U32;
-      Info_Addr : System.Address);
-   pragma Export (
-      Convention    => C,
-      Entity        => Start,
-      External_Name => "Kernel_Start");
+      Info_Addr : System.Address) with
+      Export,
+      Convention => C,
+      External_Name => "Kernel_Start";
 
-   procedure Panic with No_Return;
-   pragma Export (
-      Convention    => Asm,
-      Entity        => Panic,
-      External_Name => "Kernel_Panic_Handler");
+   procedure Panic with
+      No_Return,
+      Export,
+      Convention => Asm,
+      External_Name => "Kernel_Panic_Handler";
 
-   procedure Interrupt_Handler;
-   pragma Export (
-      Convention    => Asm,
-      Entity        => Interrupt_Handler,
-      External_Name => "Kernel_Interrupt_Handler");
+   procedure Interrupt_Handler with
+      Export,
+      Convention => Asm,
+      External_Name => "Kernel_Interrupt_Handler";
 
    procedure Log (Message : String);
 end Kernel;

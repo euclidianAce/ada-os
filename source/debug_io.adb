@@ -5,9 +5,10 @@ use System.Storage_Elements;
 
 package body Debug_IO is
    procedure Put (Message : String) is
-      Elements : Storage_Array (1 .. Message'Length)
-         with Address => Message'Address;
-      pragma Import (Ada, Elements);
+      Elements : Storage_Array (1 .. Message'Length) with
+         Import,
+         Convention => Ada,
+         Address => Message'Address;
    begin
       for Element of Elements loop
          Serial.Write (Serial.Com1, Element);
@@ -15,9 +16,10 @@ package body Debug_IO is
    end Put;
 
    procedure Put (Message : Character) is
-      Element : Storage_Element
-         with Address => Message'Address;
-      pragma Import (Ada, Element);
+      Element : Storage_Element with
+         Import,
+         Convention => Ada,
+         Address => Message'Address;
    begin
       Serial.Write (Serial.Com1, Element);
    end Put;

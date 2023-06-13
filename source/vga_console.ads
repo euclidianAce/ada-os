@@ -97,9 +97,10 @@ package VGA_Console with Preelaborate is
    type Screen_Cells is array (Row, Column) of Cell;
    pragma Pack (Screen_Cells);
 
-   Video_Memory : Screen_Cells
-      with Address => System'To_Address (16#000B_8000#);
-   pragma Import (Ada, Video_Memory);
+   Video_Memory : Screen_Cells with
+      Import,
+      Convention => Ada,
+      Address    => System'To_Address (16#000B_8000#);
 
    procedure Put (
       Char       : Character;

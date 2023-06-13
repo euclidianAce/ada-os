@@ -62,12 +62,12 @@ package body Kernel is
    procedure Disable_VGA_Cursor is
       Aliased_Byte : Storage_Element := Serial.In_B (VGA_Console.Misc_Output_Register_Read);
 
-      Reg : VGA_Console.Misc_Output_Register
-         with Address => Aliased_Byte'Address;
-      pragma Import (Ada, Reg);
-      Cursor_Reg : VGA_Console.Cursor_Start_Register
-         with Address => Aliased_Byte'Address;
-      pragma Import (Ada, Cursor_Reg);
+      Reg : VGA_Console.Misc_Output_Register with
+         Import, Convention => Ada,
+         Address => Aliased_Byte'Address;
+      Cursor_Reg : VGA_Console.Cursor_Start_Register with
+         Import, Convention => Ada,
+         Address => Aliased_Byte'Address;
 
       Addr_Port : constant Serial.Port_Address := (if Reg.IO_Address_Select then
          16#3d4# else 16#3b4#);
@@ -89,8 +89,10 @@ package body Kernel is
    procedure Memory_Copy (
       Destination : System.Address;
       Source      : System.Address;
-      Units       : System.Storage_Elements.Storage_Count);
-   pragma Export (C, Memory_Copy, "memcpy");
+      Units       : System.Storage_Elements.Storage_Count) with
+      Export,
+      Convention => C,
+      External_Name => "memcpy";
 
    procedure Log (Message : String) is
       Prefix : constant String :=
@@ -112,49 +114,48 @@ package body Kernel is
 
       type Elements is array (1 .. Units) of System.Storage_Elements.Storage_Element;
 
-      Destination_Elements : Elements with Address => Destination;
-      Source_Elements      : Elements with Address => Source;
-
-      pragma Import (Ada, Destination_Elements);
-      pragma Import (Ada, Source_Elements);
+      Destination_Elements : Elements with
+         Import, Convention => Ada,
+         Address => Destination;
+      Source_Elements      : Elements with
+         Import, Convention => Ada,
+         Address => Source;
    begin
       for I in 1 .. Units loop
          Destination_Elements (I) := Source_Elements (I);
       end loop;
    end Memory_Copy;
 
-   procedure Reload_Segments;
-   pragma Import (
-      Convention    => Asm,
-      Entity        => Reload_Segments,
-      External_Name => "reload_segments");
+   procedure Reload_Segments with
+      Import,
+      Convention => Asm,
+      External_Name => "reload_segments";
 
    type Global_Descriptor_Table_Type is array (Positive range <>) of Descriptor_Tables.Global.Segment_Descriptor;
    for Global_Descriptor_Table_Type'Alignment use 16;
    pragma Pack (Global_Descriptor_Table_Type);
 
-   Global_Descriptor_Table : Global_Descriptor_Table_Type (1 .. 6);
-   pragma Export (Asm, Global_Descriptor_Table, "Kernel_Global_Descriptor_Table");
+   Global_Descriptor_Table : Global_Descriptor_Table_Type (1 .. 6) with
+      Export,
+      Convention => Asm,
+      External_Name => "Kernel_Global_Descriptor_Table";
 
-   Task_State : Descriptor_Tables.Global.Task_State;
-   pragma Export (
-      Convention    => Asm,
-      Entity        => Task_State,
-      External_Name => "Kernel_Task_State");
+   Task_State : Descriptor_Tables.Global.Task_State with
+      Export,
+      Convention => Asm,
+      External_Name => "Kernel_Task_State";
 
-   Stack : System.Address;
-   pragma Import (
-      Convention    => Asm,
-      Entity        => Stack,
-      External_Name => "kernel_stack_pointer");
+   Stack : System.Address with
+      Import,
+      Convention => Asm,
+      External_Name => "kernel_stack_pointer";
 
    procedure Panic is
-      procedure Hang;
-      pragma No_Return (Hang);
-      pragma Import (
+      procedure Hang with
+         No_Return,
+         Import,
          Convention => Asm,
-         Entity => Hang,
-         External_Name => "hang");
+         External_Name => "hang";
 
       Stack_Trace_Addrs : Address_Array (1 .. 16) := [others => System.Null_Address];
 
@@ -359,17 +360,14 @@ package body Kernel is
       Reload_Segments;
    end Setup_GDT;
 
-   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := [others => Interrupts.Null_Gate];
-   pragma Export (
-      Convention    => Asm,
-      Entity        => Interrupt_Descriptor_Table,
-      External_Name => "Kernel_IDT");
+   Interrupt_Descriptor_Table : Interrupts.Descriptor_Table := [others => Interrupts.Null_Gate] with
+      Export,
+      External_Name => "Kernel_IDT";
 
-   procedure Interrupt_Service_Request_Wrapper;
-   pragma Import (
-      Convention    => Asm,
-      Entity        => Interrupt_Service_Request_Wrapper,
-      External_Name => "interrupt_service_request_wrapper");
+   procedure Interrupt_Service_Request_Wrapper with
+      Import,
+      Convention => Asm,
+      External_Name => "interrupt_service_request_wrapper";
 
    procedure Setup_IDT is
       use type Integers.U16;
@@ -377,9 +375,10 @@ package body Kernel is
       Log ("Attempting to setup idt...");
       for Vec in Interrupt_Descriptor_Table'Range loop
          declare
-            Gate : Interrupts.Gate
-               with Address => Interrupt_Descriptor_Table (Vec)'Address;
-            pragma Import (Asm, Gate);
+            Gate : Interrupts.Gate with
+               Import,
+               Convention => Asm,
+               Address => Interrupt_Descriptor_Table (Vec)'Address;
          begin
             Interrupts.Set_Address (Gate, Interrupt_Service_Request_Wrapper'Address);
             Gate.Segment_Selector := 16#08#;

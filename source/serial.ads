@@ -18,13 +18,11 @@ package Serial with Preelaborate is
 
    -- Non blocking read and write functions that directly correspond to the x86
    -- instructions `in` and `out`
-   function In_B (Port : Port_Address) return Storage_Element;
-   pragma Inline (In_B);
+   function In_B (Port : Port_Address) return Storage_Element with Inline;
 
    procedure Out_B (
       Port  : Port_Address;
-      Value : Storage_Element);
-   pragma Inline (Out_B);
+      Value : Storage_Element) with Inline;
 
    -- Blocking functions
    function Read (
