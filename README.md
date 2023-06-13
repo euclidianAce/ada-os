@@ -23,5 +23,15 @@ For nix users, there is a `flake.nix` with a `devShell` that should provide all 
 # TODO
 
  - [ ] Set up a real build system (I'd like to actually use `gprbuild`, but holy hell is there little to no documentation on this use case)
- - [ ] VGA graphics?
+ - [ ] non text mode graphics
+   - [ ] which then needs custom text rendering
  - [ ] PS/2 keyboard and mouse drivers
+ - [ ] actual interrupt handlers
+ - [ ] file system (probably ext2) + ELF reader for symbolic backtraces
+ - [ ] APIC
+   - why do we get a 64 bit efi table from the multiboot 2 info rather than the apic fields with the address of the RSDT/XSDT?
+ - [ ] Memory allocator
+ - [ ] Secondary stack
+ - Things to figure out whether or not I care
+   - [ ] user mode
+   - [ ] virtual memory
