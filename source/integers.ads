@@ -5,6 +5,26 @@ package Integers with Pure is
    type U32 is range 0 .. 2 ** 32 - 1;
    for U32'Size use 32;
 
+   type U64 is
+      record
+         Low  : U32;
+         High : U32;
+      end record;
+
+   for U64'Size use 64;
+   for U64 use
+      record
+         Low at 0 range 0 .. 31;
+         High at 0 range 32 .. 63;
+      end record;
+
+   -- TODO:
+   -- function "+"(A, B : U64) return U64;
+   -- function "-"(A, B : U64) return U64;
+   -- function "*"(A, B : U64) return U64;
+   -- function "/"(A, B : U64) return U64;
+   -- etc.
+
    function Address_To_U32 is new Ada.Unchecked_Conversion (
       Source => System.Address,
       Target => U32);
