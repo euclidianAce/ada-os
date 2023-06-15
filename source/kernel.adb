@@ -1,6 +1,7 @@
 with Debug_IO;
 with Descriptor_Tables.Global;
 with Descriptor_Tables;
+with Integers;
 with Interrupts;
 with Multiboot2;
 with Serial;
@@ -394,38 +395,4 @@ package body Kernel is
          Limit        => Interrupt_Descriptor_Table'Size / 8,
          Base_Address => Interrupt_Descriptor_Table'Address]);
    end Setup_IDT;
-
-   procedure Start (
-      Magic     : Integers.U32;
-      Info_Addr : System.Address) is
-   begin
-      if not Serial.Initialize (Serial.Com1) then
-         VGA_Console.Put (
-            "Unable to initialize serial port :(", 1, VGA_Console.Row'Last,
-            Foreground => VGA_Console.White,
-            Background => VGA_Console.Red);
-         return;
-      end if;
-
-      Terminal.Foreground_Color := VGA_Console.White;
-      Terminal.Background_Color := VGA_Console.Blue;
-
-      Terminal.Clear;
-      Terminal.Flush;
-
-      Log ("Magic => " & Integers.Hex_Image (Magic) & " (Should be " & Integers.Hex_Image (Multiboot2.Magic) & ")");
-      Log ("Multiboot Info Address => " & Integers.Hex_Image (Info_Addr));
-
-      Read_Multiboot2_Info (Info_Addr);
-
-      Interrupts.Disable; -- Interrupts should already be disabled, but just to be safe :P
-      Setup_GDT;
-      Setup_IDT;
-      Interrupts.Enable;
-      Disable_VGA_Cursor;
-
-      Log ("About to do a software interrupt...");
-      System.Machine_Code.Asm ("int $32", Volatile => True);
-      Log ("Did a software interrupt. Hopefully everything is fine?");
-   end Start;
 end Kernel;

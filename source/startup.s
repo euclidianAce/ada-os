@@ -32,7 +32,7 @@ startup:
 	# eax contains magic number
 	push ebx
 	push eax
-	call Kernel_Start
+	call Kernel_Entry
 
 hang:
 	cli
